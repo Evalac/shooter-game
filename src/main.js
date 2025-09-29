@@ -86,7 +86,6 @@ import { initLevel2 } from "./levels/level2";
     app.stage.addChild(restartButton);
   }
 
-  // Стартова кнопка
   startButton = new Text({
     text: "START",
     style: { fill: 0x00ff00, fontSize: 48, fontWeight: "bold" },
@@ -102,7 +101,6 @@ import { initLevel2 } from "./levels/level2";
   });
   app.stage.addChild(startButton);
 
-  // Управління
   document.addEventListener("keydown", (e) => {
     if (gameOver || !started) return;
     if (e.key === "ArrowRight") ship.moveRight();
@@ -113,7 +111,6 @@ import { initLevel2 } from "./levels/level2";
     }
   });
 
-  // Цикл
   app.ticker.add((time) => {
     if (gameOver || !started) return;
     ship.update();

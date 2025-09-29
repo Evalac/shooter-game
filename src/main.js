@@ -12,7 +12,7 @@ import { initLevel2 } from "./levels/level2";
     ship: await Assets.load("/assets/spaceship.png"),
     asteroid: await Assets.load("/assets/asteroid.png"),
     back: await Assets.load("/assets/back.png"),
-    boss: await Assets.load("/assets/asteroid.png"), // тимчасово той самий
+    boss: await Assets.load("/assets/asteroid.png"), // тимчасово
   };
 
   const back = new Sprite(textures.back);
@@ -21,10 +21,11 @@ import { initLevel2 } from "./levels/level2";
   app.stage.addChild(back);
 
   let ship, asteroids, boss;
-  let bulletsText, timerText, messageText, restartButton;
+  let bulletsText, timerText, messageText, restartButton, startButton;
   let timeLeft = 60;
   let gameOver = false;
   let level = 1;
+  let started = false;
 
   function startLevel1() {
     ({ ship, asteroids, bulletsText, timerText, messageText } = initLevel1(
@@ -33,6 +34,7 @@ import { initLevel2 } from "./levels/level2";
     ));
     gameOver = false;
     timeLeft = 60;
+    started = true;
   }
 
   function startLevel2() {
@@ -63,11 +65,25 @@ import { initLevel2 } from "./levels/level2";
     app.stage.addChild(restartButton);
   }
 
-  startLevel1();
+  // Стартова кнопка
+  startButton = new Text({
+    text: "START",
+    style: { fill: 0x00ff00, fontSize: 48, fontWeight: "bold" },
+  });
+  startButton.anchor.set(0.5);
+  startButton.x = app.screen.width / 2;
+  startButton.y = app.screen.height - 30;
+  startButton.interactive = true;
+  startButton.cursor = "pointer";
+  startButton.on("pointerdown", () => {
+    app.stage.removeChild(startButton);
+    startLevel1();
+  });
+  app.stage.addChild(startButton);
 
   // Таймер
-  setInterval(() => {
-    if (!gameOver) {
+  const intervalID = setInterval(() => {
+    if (!gameOver && started) {
       timeLeft--;
       timerText.text = `Time: ${timeLeft}`;
       if (timeLeft <= 0) endGame("YOU LOSE");
@@ -76,7 +92,7 @@ import { initLevel2 } from "./levels/level2";
 
   // Управління
   document.addEventListener("keydown", (e) => {
-    if (gameOver) return;
+    if (gameOver || !started) return;
     if (e.key === "ArrowRight") ship.moveRight();
     if (e.key === "ArrowLeft") ship.moveLeft();
     if (e.code === "Space") {
@@ -87,12 +103,11 @@ import { initLevel2 } from "./levels/level2";
 
   // Цикл
   app.ticker.add((time) => {
-    if (gameOver) return;
+    if (gameOver || !started) return;
     ship.update();
 
     if (level === 1) {
       asteroids.forEach((a) => a.update(time.deltaTime));
-      // зіткнення
       for (let i = ship.bullets.length - 1; i >= 0; i--) {
         for (let j = asteroids.length - 1; j >= 0; j--) {
           if (isColliding(ship.bullets[i], asteroids[j].sprite)) {
@@ -109,13 +124,12 @@ import { initLevel2 } from "./levels/level2";
         startLevel2();
       } else if (ship.bulletCount === 0 && ship.bullets.length === 0) {
         endGame("YOU LOSE");
+        clearInterval(intervalID);
       }
     }
 
     if (level === 2 && boss) {
       boss.update();
-
-      // попадання по босу
       for (let i = ship.bullets.length - 1; i >= 0; i--) {
         if (isColliding(ship.bullets[i], boss.sprite)) {
           app.stage.removeChild(ship.bullets[i]);
@@ -124,11 +138,10 @@ import { initLevel2 } from "./levels/level2";
           if (boss.hp <= 0) {
             boss.destroy();
             endGame("YOU WIN");
+            clearInterval(intervalID);
           }
         }
       }
-
-      // кулі боса з кулями гравця
       for (let i = boss.bullets.length - 1; i >= 0; i--) {
         for (let j = ship.bullets.length - 1; j >= 0; j--) {
           if (isColliding(boss.bullets[i], ship.bullets[j])) {
@@ -140,16 +153,16 @@ import { initLevel2 } from "./levels/level2";
           }
         }
       }
-
-      // куля боса в корабель
       for (let i = boss.bullets.length - 1; i >= 0; i--) {
         if (isColliding(boss.bullets[i], ship.sprite)) {
           endGame("YOU LOSE");
+          boss.stop();
+          clearInterval(intervalID);
         }
       }
-
       if (ship.bulletCount === 0 && ship.bullets.length === 0) {
         endGame("YOU LOSE");
+        clearInterval(intervalID);
       }
     }
   });

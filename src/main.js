@@ -26,6 +26,7 @@ import { initLevel2 } from "./levels/level2";
   let gameOver = false;
   let level = 1;
   let started = false;
+  let intervalID = null;
 
   function startLevel1() {
     ({ ship, asteroids, bulletsText, timerText, messageText } = initLevel1(
@@ -35,17 +36,37 @@ import { initLevel2 } from "./levels/level2";
     gameOver = false;
     timeLeft = 60;
     started = true;
+
+    if (intervalID) clearInterval(intervalID);
+    intervalID = setInterval(() => {
+      if (!gameOver && started) {
+        timeLeft--;
+        timerText.text = `Time: ${timeLeft}`;
+        if (timeLeft <= 0) endGame("YOU LOSE");
+      }
+    }, 1000);
   }
 
   function startLevel2() {
     boss = initLevel2(app, ship, bulletsText, timerText, textures);
     gameOver = false;
     timeLeft = 60;
+
+    if (intervalID) clearInterval(intervalID);
+    intervalID = setInterval(() => {
+      if (!gameOver && started) {
+        timeLeft--;
+        timerText.text = `Time: ${timeLeft}`;
+        if (timeLeft <= 0) endGame("YOU LOSE");
+      }
+    }, 1000);
   }
 
   function endGame(text) {
     gameOver = true;
     messageText.text = text;
+
+    if (intervalID) clearInterval(intervalID); // 🔥 зупиняємо таймер
 
     restartButton = new Text({
       text: "RESTART",
@@ -81,15 +102,6 @@ import { initLevel2 } from "./levels/level2";
   });
   app.stage.addChild(startButton);
 
-  // Таймер
-  const intervalID = setInterval(() => {
-    if (!gameOver && started) {
-      timeLeft--;
-      timerText.text = `Time: ${timeLeft}`;
-      if (timeLeft <= 0) endGame("YOU LOSE");
-    }
-  }, 1000);
-
   // Управління
   document.addEventListener("keydown", (e) => {
     if (gameOver || !started) return;
@@ -97,7 +109,7 @@ import { initLevel2 } from "./levels/level2";
     if (e.key === "ArrowLeft") ship.moveLeft();
     if (e.code === "Space") {
       ship.shoot();
-      bulletsText.text = `Bullets: ${ship.bulletCount}`;
+      bulletsText.text = `Bullets:10/${ship.bulletCount}`;
     }
   });
 
@@ -108,6 +120,7 @@ import { initLevel2 } from "./levels/level2";
 
     if (level === 1) {
       asteroids.forEach((a) => a.update(time.deltaTime));
+
       for (let i = ship.bullets.length - 1; i >= 0; i--) {
         for (let j = asteroids.length - 1; j >= 0; j--) {
           if (isColliding(ship.bullets[i], asteroids[j].sprite)) {
@@ -119,17 +132,18 @@ import { initLevel2 } from "./levels/level2";
           }
         }
       }
+
       if (asteroids.length === 0) {
         level = 2;
         startLevel2();
       } else if (ship.bulletCount === 0 && ship.bullets.length === 0) {
         endGame("YOU LOSE");
-        clearInterval(intervalID);
       }
     }
 
     if (level === 2 && boss) {
       boss.update();
+
       for (let i = ship.bullets.length - 1; i >= 0; i--) {
         if (isColliding(ship.bullets[i], boss.sprite)) {
           app.stage.removeChild(ship.bullets[i]);
@@ -138,10 +152,10 @@ import { initLevel2 } from "./levels/level2";
           if (boss.hp <= 0) {
             boss.destroy();
             endGame("YOU WIN");
-            clearInterval(intervalID);
           }
         }
       }
+
       for (let i = boss.bullets.length - 1; i >= 0; i--) {
         for (let j = ship.bullets.length - 1; j >= 0; j--) {
           if (isColliding(boss.bullets[i], ship.bullets[j])) {
@@ -153,17 +167,18 @@ import { initLevel2 } from "./levels/level2";
           }
         }
       }
+
       for (let i = boss.bullets.length - 1; i >= 0; i--) {
         if (isColliding(boss.bullets[i], ship.sprite)) {
           endGame("YOU LOSE");
           boss.stop();
-          clearInterval(intervalID);
         }
       }
+
       if (ship.bulletCount === 0 && ship.bullets.length === 0) {
         endGame("YOU LOSE");
-        clearInterval(intervalID);
       }
     }
+    bulletsText.text = `Bullets: 10/${ship.bulletCount}`;
   });
 })();

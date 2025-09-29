@@ -66,7 +66,7 @@ import { initLevel2 } from "./levels/level2";
     gameOver = true;
     messageText.text = text;
 
-    if (intervalID) clearInterval(intervalID); // 🔥 зупиняємо таймер
+    if (intervalID) clearInterval(intervalID);
 
     restartButton = new Text({
       text: "RESTART",
